@@ -1,0 +1,128 @@
+// Prisma schema for the CRM app
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum DealStage {
+  LEAD
+  QUALIFIED
+  PROPOSAL
+  WON
+  LOST
+}
+
+enum TaskStatus {
+  OPEN
+  DONE
+}
+
+model User {
+  id        String   @id @default(uuid())
+  auth0Sub  String   @unique
+  email     String   @unique
+  name      String?
+  role      Role     @default(MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contactsCreated Contact[] @relation("ContactCreatedBy")
+  dealsOwned      Deal[]    @relation("DealOwner")
+  notesAuthored   Note[]    @relation("NoteAuthor")
+  tasksAssigned   Task[]    @relation("TaskAssignee")
+  tasksCreated    Task[]    @relation("TaskCreatedBy")
+}
+
+model Contact {
+  id          String   @id @default(uuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  company     String?
+  jobTitle    String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User   @relation("ContactCreatedBy", fields: [createdById], references: [id])
+  deals     Deal[]
+  notes     Note[]
+  tasks     Task[]
+
+  @@index([lastName, firstName])
+  @@index([email])
+  @@index([company])
+}
+
+model Deal {
+  id         String    @id @default(uuid())
+  title      String
+  valueCents Int
+  stage      DealStage @default(LEAD)
+  contactId  String
+  ownerId    String
+  closedAt   DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  owner   User    @relation("DealOwner", fields: [ownerId], references: [id])
+  notes   Note[]
+  tasks   Task[]
+
+  @@index([contactId])
+  @@index([stage])
+  @@index([ownerId])
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  body      String   @db.Text
+  authorId  String
+  contactId String?
+  dealId    String?
+  createdAt DateTime @default(now())
+
+  author  User     @relation("NoteAuthor", fields: [authorId], references: [id])
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  deal    Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([contactId])
+  @@index([dealId])
+}
+
+model Task {
+  id          String     @id @default(uuid())
+  title       String
+  description String?    @db.Text
+  dueDate     DateTime?
+  status      TaskStatus @default(OPEN)
+  assigneeId  String
+  createdById String
+  contactId   String?
+  dealId      String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  assignee  User     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy User     @relation("TaskCreatedBy", fields: [createdById], references: [id])
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  deal      Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([assigneeId, status])
+  @@index([dueDate])
+  @@index([contactId])
+  @@index([dealId])
+}
