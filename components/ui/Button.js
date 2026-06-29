@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 const VARIANTS = {
-  primary: "bg-zinc-900 text-white hover:bg-zinc-700",
+  primary:
+    "bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:from-indigo-500 hover:to-violet-500",
   secondary: "bg-white text-zinc-900 border border-zinc-300 hover:bg-zinc-50",
   danger: "bg-red-600 text-white hover:bg-red-500",
 };
