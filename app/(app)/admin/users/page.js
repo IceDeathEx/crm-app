@@ -15,16 +15,16 @@ export default async function AdminUsersPage() {
 
       <Table>
         <Thead>
-          <Th>Name</Th>
-          <Th>Email</Th>
+          <Th>Username</Th>
+          <Th>Phone</Th>
           <Th>Joined</Th>
           <Th>Role</Th>
         </Thead>
         <Tbody>
           {users.map((user) => (
             <tr key={user.id} className="hover:bg-zinc-50">
-              <Td>{user.name ?? "—"}</Td>
-              <Td>{user.email}</Td>
+              <Td>{user.username}</Td>
+              <Td>{user.phone}</Td>
               <Td>{formatDate(user.createdAt)}</Td>
               <Td>
                 {user.id === currentUser.id ? (

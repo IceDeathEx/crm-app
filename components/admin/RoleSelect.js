@@ -34,7 +34,7 @@ export function RoleSelect({ userId, role }) {
         disabled={isPending}
         className="rounded-md border border-zinc-300 px-2 py-1 text-sm"
       >
-        <option value="MEMBER">Member</option>
+        <option value="USER">User</option>
         <option value="ADMIN">Admin</option>
       </select>
       {error && <span className="text-xs text-red-600">{error}</span>}

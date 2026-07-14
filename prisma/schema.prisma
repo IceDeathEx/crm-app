@@ -1,4 +1,4 @@
-// Prisma schema for the CRM app
+// Prisma schema for SGMakanHealthy
 // https://pris.ly/d/prisma-schema
 
 generator client {
@@ -12,117 +12,128 @@ datasource db {
 
 enum Role {
   ADMIN
-  MEMBER
+  USER
 }
 
-enum DealStage {
-  LEAD
-  QUALIFIED
-  PROPOSAL
-  WON
-  LOST
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
 }
 
-enum TaskStatus {
-  OPEN
-  DONE
+enum ActivityLevel {
+  SEDENTARY
+  LIGHT
+  MODERATE
+  ACTIVE
+  VERY_ACTIVE
 }
 
 model User {
+  id              String         @id @default(uuid())
+  phone           String         @unique
+  phoneVerifiedAt DateTime?
+  username        String         @unique
+  role            Role           @default(USER)
+  age             Int?
+  gender          Gender?
+  activityLevel   ActivityLevel?
+  heightCm        Float?
+  weightKg        Float?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  sessions Session[]
+  reviews  Review[]
+}
+
+model Otp {
+  id         String    @id @default(uuid())
+  phone      String
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  @@index([phone])
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Dish {
+  id               String   @id @default(uuid())
+  slug             String   @unique
+  name             String
+  shortDescription String   @db.Text
+  category         String?
+  imageUrl         String?
+  caloriesKcal     Int
+  proteinG         Float
+  carbsG           Float
+  fatG             Float
+  sodiumMg         Int
+  fiberG           Float
+  sugarG           Float
+  servingNote      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  stallDishes StallDish[]
+}
+
+model Stall {
   id        String   @id @default(uuid())
-  auth0Sub  String   @unique
-  email     String   @unique
-  name      String?
-  role      Role     @default(MEMBER)
+  name      String
+  address   String
+  latitude  Float?
+  longitude Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  contactsCreated Contact[] @relation("ContactCreatedBy")
-  dealsOwned      Deal[]    @relation("DealOwner")
-  notesAuthored   Note[]    @relation("NoteAuthor")
-  tasksAssigned   Task[]    @relation("TaskAssignee")
-  tasksCreated    Task[]    @relation("TaskCreatedBy")
+  stallDishes StallDish[]
 }
 
-model Contact {
+model StallDish {
+  id         String   @id @default(uuid())
+  stallId    String
+  dishId     String
+  priceCents Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  stall   Stall    @relation(fields: [stallId], references: [id], onDelete: Cascade)
+  dish    Dish     @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  reviews Review[]
+
+  @@unique([stallId, dishId])
+  @@index([dishId])
+  @@index([stallId])
+}
+
+model Review {
   id          String   @id @default(uuid())
-  firstName   String
-  lastName    String
-  email       String?
-  phone       String?
-  company     String?
-  jobTitle    String?
-  createdById String
+  stallDishId String
+  userId      String
+  isAnonymous Boolean  @default(false)
+  description String   @db.Text
+  tasteRating Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy User   @relation("ContactCreatedBy", fields: [createdById], references: [id])
-  deals     Deal[]
-  notes     Note[]
-  tasks     Task[]
+  stallDish StallDish @relation(fields: [stallDishId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([lastName, firstName])
-  @@index([email])
-  @@index([company])
-}
-
-model Deal {
-  id         String    @id @default(uuid())
-  title      String
-  valueCents Int
-  stage      DealStage @default(LEAD)
-  contactId  String
-  ownerId    String
-  closedAt   DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  contact Contact @relation(fields: [contactId], references: [id], onDelete: Restrict)
-  owner   User    @relation("DealOwner", fields: [ownerId], references: [id])
-  notes   Note[]
-  tasks   Task[]
-
-  @@index([contactId])
-  @@index([stage])
-  @@index([ownerId])
-}
-
-model Note {
-  id        String   @id @default(uuid())
-  body      String   @db.Text
-  authorId  String
-  contactId String?
-  dealId    String?
-  createdAt DateTime @default(now())
-
-  author  User     @relation("NoteAuthor", fields: [authorId], references: [id])
-  contact Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  deal    Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
-
-  @@index([contactId])
-  @@index([dealId])
-}
-
-model Task {
-  id          String     @id @default(uuid())
-  title       String
-  description String?    @db.Text
-  dueDate     DateTime?
-  status      TaskStatus @default(OPEN)
-  assigneeId  String
-  createdById String
-  contactId   String?
-  dealId      String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  assignee  User     @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  createdBy User     @relation("TaskCreatedBy", fields: [createdById], references: [id])
-  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  deal      Deal?    @relation(fields: [dealId], references: [id], onDelete: Cascade)
-
-  @@index([assigneeId, status])
-  @@index([dueDate])
-  @@index([contactId])
-  @@index([dealId])
+  @@index([stallDishId])
+  @@index([userId])
 }

@@ -8,7 +8,7 @@ export async function PATCH(request, { params }) {
     const { id } = await params;
     const body = await request.json();
 
-    if (body.role !== "ADMIN" && body.role !== "MEMBER") {
+    if (body.role !== "ADMIN" && body.role !== "USER") {
       throw new ValidationError("Invalid role");
     }
     if (id === admin.id) {

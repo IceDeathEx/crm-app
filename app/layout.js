@@ -12,8 +12,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "CRM",
-  description: "Contacts, deals, notes, and tasks in one shared workspace.",
+  title: "SGMakanHealthy",
+  description:
+    "Micro-nutrition, taste ratings, and stall comparisons for Singapore's favourite dishes.",
 };
 
 export default function RootLayout({ children }) {
